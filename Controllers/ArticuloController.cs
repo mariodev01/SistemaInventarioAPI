@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaInventarioAPI.Models;
+using SistemaInventarioAPI.Models.DTO_s;
+using SistemaInventarioAPI.Repository.IRepository;
 
 namespace SistemaInventarioAPI.Controllers
 {
@@ -10,22 +13,28 @@ namespace SistemaInventarioAPI.Controllers
     public class ArticuloController : ControllerBase
     {
         private readonly SistemaDbContext context;
+        private readonly IMapper mapper;
+        private readonly IArticulo _articulo;
 
-        public ArticuloController(SistemaDbContext context)
+        public ArticuloController(SistemaDbContext context,IMapper mapper,IArticulo articulo)
         {
             this.context = context;
+            this.mapper = mapper;
+            _articulo = articulo;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Articulo>>> GetArticulos()
+        public async Task<ActionResult<List<ArticuloDTO>>> GetArticulos()
         {
-            var articulos = await context.Articulos.ToListAsync();
-            return articulos;
+            var articulos = await _articulo.GetAll();
+            //return mapper.Map<List<ArticuloDTO>>(articulos);
+
+            return Ok(articulos);
         }
         [HttpGet("id:int")]
-        public async Task<ActionResult<Articulo>> GetArticulo(int id)
+        public async Task<ActionResult<ArticuloDTO>> GetArticulo(int id)
         {
-            var articulo = await context.Articulos.FirstOrDefaultAsync(x => x.Id == id);
+            var articulo = await _articulo.GetById(id);
             if (articulo == null)
             {
                 return NotFound("No se encontro Articulo con el id " + id);
@@ -35,54 +44,42 @@ namespace SistemaInventarioAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateArticulo([FromBody] Articulo articulo)
+        public async Task<ActionResult> CreateArticulo([FromBody] ArticuloCreateDTO articuloCreate)
         {
-            var existeArticulo = await context.Articulos.AnyAsync(a => a.Descripcion == articulo.Descripcion);
+            Articulo modelo = mapper.Map<Articulo>(articuloCreate);
 
-            if (existeArticulo)
-            {
-                return BadRequest("Ya existe un Articulo con ese Nombre ");
-            }
-
-            await context.AddAsync(articulo);
-            await context.SaveChangesAsync();
+            await _articulo.Create(modelo);
             return NoContent();
         }
 
         [HttpPut("id:int")]
-        public async Task<ActionResult> EditArticulo([FromBody] Articulo articulo, int id)
+        public async Task<ActionResult> EditArticulo([FromBody] ArticuloCreateDTO articuloCreate, int id)
         {
-            var existeArticulo = await context.Articulos.AnyAsync(a => a.Id == id);
+            var articulo = await _articulo.GetById(id);
 
-            if (!existeArticulo)
+            if (articulo == null)
             {
-                return NotFound("no existe articulo con el id " + id);
+                return NotFound();
             }
 
-            articulo.Id = id;
-
-            context.Update(articulo);
-            await context.SaveChangesAsync();
+            Articulo modelo = mapper.Map<Articulo>(articuloCreate);
+            modelo.Id = id;
+            await _articulo.Update(modelo);
             return NoContent();
-
+            
         }
 
         [HttpDelete("id:int")]
         public async Task<ActionResult> DeleteArticulo(int id)
         {
-            var existeArticulo = await context.Articulos.AnyAsync(a=>a.Id== id);
-
-            if (!existeArticulo)
+            var articulo = await _articulo.GetById(id);
+            if (articulo == null)
             {
-                return NotFound("no existe articulo con el id " + id);
+                return NotFound(); 
             }
 
-            context.Remove(new Articulo { Id=id});
-            await context.SaveChangesAsync();
+            await _articulo.Delete(id);
             return NoContent();
-
         }
-
-
     }
 }

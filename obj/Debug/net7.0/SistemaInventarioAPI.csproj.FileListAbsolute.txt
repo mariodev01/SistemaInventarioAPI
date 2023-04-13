@@ -74,3 +74,5 @@ C:\Users\Ultra T\source\repos\SistemaInventarioAPI\SistemaInventarioAPI\obj\Debu
 C:\Users\Ultra T\source\repos\SistemaInventarioAPI\SistemaInventarioAPI\obj\Debug\net7.0\SistemaInventarioAPI.pdb
 C:\Users\Ultra T\source\repos\SistemaInventarioAPI\SistemaInventarioAPI\obj\Debug\net7.0\SistemaInventarioAPI.genruntimeconfig.cache
 C:\Users\Ultra T\source\repos\SistemaInventarioAPI\SistemaInventarioAPI\obj\Debug\net7.0\ref\SistemaInventarioAPI.dll
+C:\Users\Ultra T\source\repos\SistemaInventarioAPI\SistemaInventarioAPI\bin\Debug\net7.0\AutoMapper.dll
+C:\Users\Ultra T\source\repos\SistemaInventarioAPI\SistemaInventarioAPI\bin\Debug\net7.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
