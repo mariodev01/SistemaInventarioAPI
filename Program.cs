@@ -22,6 +22,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IArticulo, ArticuloRepository>();
 builder.Services.AddScoped<ITransaccion, TransaccionRepository>();
+builder.Services.AddScoped<StoredProcedures>();
 
 var app = builder.Build();
 

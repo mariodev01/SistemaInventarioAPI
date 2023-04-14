@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaInventarioAPI.Models;
 using SistemaInventarioAPI.Models.DTO_s;
 using SistemaInventarioAPI.Repository.IRepository;
+using SistemaInventarioAPI.Utilidades;
 
 namespace SistemaInventarioAPI.Controllers
 {
@@ -15,12 +16,14 @@ namespace SistemaInventarioAPI.Controllers
         private readonly SistemaDbContext context;
         private readonly IMapper mapper;
         private readonly ITransaccion _tr;
+        private readonly StoredProcedures stored;
 
-        public TransaccionController(SistemaDbContext context,IMapper mapper,ITransaccion tr)
+        public TransaccionController(SistemaDbContext context,IMapper mapper,ITransaccion tr,StoredProcedures stored)
         {
             this.context = context;
             this.mapper = mapper;
             _tr = tr;
+            this.stored = stored;
         }
 
         [HttpGet]
@@ -47,9 +50,25 @@ namespace SistemaInventarioAPI.Controllers
         public async Task<ActionResult> CreateTransaccion([FromBody] TransaccionCreateDTO transaccionDTO)
         {
             Transaccion modelo = mapper.Map<Transaccion>(transaccionDTO);
+            if(ModelState.IsValid)
+            {
+                await _tr.Create(modelo);
+                var Tultimo = context.Transaccions.OrderByDescending(t => t.Id).Take(1).FirstOrDefault();
+                if (Tultimo.TipoTransaccionId == 1)
+                {
+                    var costo = context.Articulos.Where(a => a.Id == Tultimo.ArticuloId).FirstOrDefault();
+                    var costoT = costo.Costo * Tultimo.Cantidad;
 
-            await _tr.Create(modelo);
-
+                    stored.RegistrarEntrada(Tultimo.ArticuloId, Tultimo.Cantidad);
+                    stored.ActualizarCosto(costoT, Tultimo.Id);
+                }else if (Tultimo.TipoTransaccionId == 2)
+                {
+                    var costo = context.Articulos.Where(a => a.Id == Tultimo.ArticuloId).FirstOrDefault();
+                    var costoT = costo.Costo * Tultimo.Cantidad;
+                    stored.RegistrarSalida(Tultimo.ArticuloId, Tultimo.Cantidad);
+                    stored.ActualizarCosto(costoT, Tultimo.Id);
+                }
+            }
             return NoContent();
         }
 
@@ -64,12 +83,28 @@ namespace SistemaInventarioAPI.Controllers
             }
 
             Transaccion transaccion = mapper.Map<Transaccion>(createDTO);
-
             transaccion.Id= id;
+            if (ModelState.IsValid)
+            {
+                await _tr.Update(transaccion);
+                var Tultimo = context.Transaccions.OrderByDescending(t => t.Id).Take(1).FirstOrDefault();
+                if (Tultimo.TipoTransaccionId == 1)
+                {
+                    var costo = context.Articulos.Where(a => a.Id == Tultimo.ArticuloId).FirstOrDefault();
+                    var costoT = costo.Costo * Tultimo.Cantidad;
 
-            await _tr.Update(transaccion);
+                    stored.RegistrarEntrada(Tultimo.ArticuloId, Tultimo.Cantidad);
+                    stored.ActualizarCosto(costoT, Tultimo.Id);
+                }
+                else if (Tultimo.TipoTransaccionId == 2)
+                {
+                    var costo = context.Articulos.Where(a => a.Id == Tultimo.ArticuloId).FirstOrDefault();
+                    var costoT = costo.Costo * Tultimo.Cantidad;
+                    stored.RegistrarSalida(Tultimo.ArticuloId, Tultimo.Cantidad);
+                    stored.ActualizarCosto(costoT, Tultimo.Id);
+                }
+            }
             return NoContent();
-
         }
 
         [HttpDelete("{id:int}")]
